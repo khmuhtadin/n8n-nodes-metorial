@@ -4,24 +4,32 @@ const fields = (displayName: string, name: string, show: string[], description: 
 export class Metorial implements INodeType {
  description: INodeTypeDescription = {
   displayName: 'Metorial', name: 'metorial', icon: { light: 'file:metorial.svg', dark: 'file:metorial.dark.svg' }, group: ['transform'], version: 1,
-  description: 'Manage MCP sessions, providers and integrations in Metorial', subtitle: '={{$parameter.operation}}', defaults: { name: 'Metorial' },
+  description: 'Manage MCP sessions, providers and integrations in Metorial', subtitle: '={{$parameter.resource + ": " + $parameter.operation}}', defaults: { name: 'Metorial' },
   inputs: [NodeConnectionTypes.Main], outputs: [NodeConnectionTypes.Main], usableAsTool: true, credentials: [{ name: 'metorialApi', required: true }],
   properties: [
-   // eslint-disable-next-line @n8n/community-nodes/resource-operation-pattern -- Flat actions are directly discoverable by AI agents.
-   { displayName: 'Operation', name: 'operation', type: 'options', noDataExpression: true, default: 'listSessions', options: [
-    { name: 'Add Session Provider', value: 'createSessionProvider', action: 'Add a provider to a session' },
-    { name: 'Create Session', value: 'createSession', action: 'Create a session' },
-    { name: 'Delete Session', value: 'deleteSession', action: 'Delete a session' },
-    { name: 'Delete Session Provider', value: 'deleteSessionProvider', action: 'Delete a session provider' },
-    { name: 'Get Session', value: 'getSession', action: 'Get a session' },
-    { name: 'Get Session Provider', value: 'getSessionProvider', action: 'Get a session provider' },
+   { displayName: 'Resource', name: 'resource', type: 'options', noDataExpression: true, default: 'session', options: [
+    { name: 'Catalog', value: 'catalog', description: 'Providers, deployments and integrations available in your Metorial instance' },
+    { name: 'Session', value: 'session' },
+    { name: 'Session Provider', value: 'sessionProvider' },
+   ] },
+   { displayName: 'Operation', name: 'operation', type: 'options', noDataExpression: true, default: 'listSessions', displayOptions: { show: { resource: ['session'] } }, options: [
+    { name: 'Create', value: 'createSession', action: 'Create a session' },
+    { name: 'Delete', value: 'deleteSession', action: 'Delete a session' },
+    { name: 'Get', value: 'getSession', action: 'Get a session' },
+    { name: 'Get Many', value: 'listSessions', action: 'List sessions' },
+    { name: 'Update', value: 'updateSession', action: 'Update a session' },
+   ] },
+   { displayName: 'Operation', name: 'operation', type: 'options', noDataExpression: true, default: 'listSessionProviders', displayOptions: { show: { resource: ['sessionProvider'] } }, options: [
+    { name: 'Add', value: 'createSessionProvider', action: 'Add a provider to a session' },
+    { name: 'Delete', value: 'deleteSessionProvider', action: 'Delete a session provider' },
+    { name: 'Get', value: 'getSessionProvider', action: 'Get a session provider' },
+    { name: 'Get Many', value: 'listSessionProviders', action: 'List session providers' },
+    { name: 'Update', value: 'updateSessionProvider', action: 'Update a session provider' },
+   ] },
+   { displayName: 'Operation', name: 'operation', type: 'options', noDataExpression: true, default: 'listProviders', displayOptions: { show: { resource: ['catalog'] } }, options: [
     { name: 'List Deployments', value: 'listDeployments', action: 'List provider deployments' },
     { name: 'List Integrations', value: 'listIntegrations', action: 'List integrations' },
     { name: 'List Providers', value: 'listProviders', action: 'List providers' },
-    { name: 'List Session Providers', value: 'listSessionProviders', action: 'List session providers' },
-    { name: 'List Sessions', value: 'listSessions', action: 'List sessions' },
-    { name: 'Update Session', value: 'updateSession', action: 'Update a session' },
-    { name: 'Update Session Provider', value: 'updateSessionProvider', action: 'Update a session provider' },
    ] },
    fields('Session ID', 'sessionId', ['getSession','updateSession','deleteSession','createSessionProvider'], 'The session ID returned by Metorial', true),
    fields('Session Provider ID', 'sessionProviderId', ['getSessionProvider','updateSessionProvider','deleteSessionProvider'], 'The ID of a provider attached to a session', true),
