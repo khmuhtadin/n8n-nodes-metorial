@@ -1,0 +1,325 @@
+{
+  "name": "Clean up stale MCP sessions with Metorial and Slack",
+  "nodes": [
+    {
+      "id": "n001-0000-4000-8000-000000000000",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "## Clean up stale MCP sessions with Metorial and Slack\n\nTeams that give AI agents access to tools through MCP end up with sessions nobody uses anymore. This workflow checks your Metorial sessions every morning, deletes the ones that are disconnected and older than your cutoff (or have errors), and posts a short summary to Slack so the team knows what was cleaned up.\n\n### How it works\n1. A daily schedule lists every session in Metorial.\n2. Each session becomes its own item.\n3. Sessions that are disconnected and older than the cutoff, or that report errors, are marked stale.\n4. Stale sessions are deleted in Metorial.\n5. One Slack message lists what was removed.\n\n### Setup steps\n- [ ] Install the community node **n8n-nodes-metorial** (Settings > Community nodes)\n- [ ] Create a Metorial API key at metorial.com and add it as a credential\n- [ ] Set **max_age_days** in the Settings node\n- [ ] Connect Slack and pick your channel\n- [ ] Run it once with the Delete node disabled to preview\n\n### Customization\nKeep sessions with a certain name, change the schedule, or send the summary by email.",
+        "width": 560,
+        "height": 720
+      }
+    },
+    {
+      "id": "n002-0000-4000-8000-000000000000",
+      "name": "1. List sessions",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        620,
+        0
+      ],
+      "parameters": {
+        "content": "## 1. List sessions\n\nRuns every morning, sets the cutoff and lists all MCP sessions from Metorial.",
+        "width": 1100,
+        "height": 370,
+        "color": 7
+      }
+    },
+    {
+      "id": "n007-0000-4000-8000-000000000000",
+      "name": "2. Find and delete stale ones",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        0
+      ],
+      "parameters": {
+        "content": "## 2. Find and delete stale ones\n\nKeeps disconnected sessions older than the cutoff or with errors, then deletes them in Metorial.",
+        "width": 580,
+        "height": 370,
+        "color": 7
+      }
+    },
+    {
+      "id": "n010-0000-4000-8000-000000000000",
+      "name": "3. Report",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2380,
+        0
+      ],
+      "parameters": {
+        "content": "## 3. Report\n\nCollects the deleted sessions and posts one summary message to Slack.",
+        "width": 580,
+        "height": 370,
+        "color": 7
+      }
+    },
+    {
+      "id": "n003-0000-4000-8000-000000000000",
+      "name": "Every morning",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "position": [
+        680,
+        180
+      ]
+    },
+    {
+      "id": "n004-0000-4000-8000-000000000000",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "max_age_days",
+              "type": "number",
+              "value": 7
+            }
+          ]
+        },
+        "options": {}
+      },
+      "position": [
+        940,
+        180
+      ]
+    },
+    {
+      "id": "n005-0000-4000-8000-000000000000",
+      "name": "List sessions",
+      "type": "n8n-nodes-metorial.metorial",
+      "typeVersion": 1,
+      "parameters": {
+        "resource": "session",
+        "operation": "listSessions"
+      },
+      "credentials": {
+        "metorialApi": {
+          "id": "",
+          "name": "Metorial account"
+        }
+      },
+      "position": [
+        1200,
+        180
+      ]
+    },
+    {
+      "id": "n006-0000-4000-8000-000000000000",
+      "name": "One item per session",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "parameters": {
+        "fieldToSplitOut": "items",
+        "options": {}
+      },
+      "position": [
+        1460,
+        180
+      ]
+    },
+    {
+      "id": "n008-0000-4000-8000-000000000000",
+      "name": "Stale?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ ($json.connection_state === 'disconnected' && DateTime.fromISO($json.created_at) < $now.minus({ days: $('Settings').first().json.max_age_days })) || $json.has_errors === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "position": [
+        1820,
+        180
+      ]
+    },
+    {
+      "id": "n009-0000-4000-8000-000000000000",
+      "name": "Delete session",
+      "type": "n8n-nodes-metorial.metorial",
+      "typeVersion": 1,
+      "parameters": {
+        "resource": "session",
+        "operation": "deleteSession",
+        "sessionId": "={{ $json.id }}"
+      },
+      "credentials": {
+        "metorialApi": {
+          "id": "",
+          "name": "Metorial account"
+        }
+      },
+      "position": [
+        2080,
+        180
+      ]
+    },
+    {
+      "id": "n011-0000-4000-8000-000000000000",
+      "name": "Collect deleted",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "deleted",
+        "options": {}
+      },
+      "position": [
+        2440,
+        180
+      ]
+    },
+    {
+      "id": "n012-0000-4000-8000-000000000000",
+      "name": "Post summary",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#mcp-ops"
+        },
+        "text": "=:broom: Metorial cleanup removed {{ $('Stale?').all().length }} stale MCP session(s): {{ $('Stale?').all().map(i => i.json.name || i.json.id).join(', ') }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "",
+          "name": "Slack account"
+        }
+      },
+      "position": [
+        2700,
+        180
+      ]
+    }
+  ],
+  "connections": {
+    "Every morning": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "List sessions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List sessions": {
+      "main": [
+        [
+          {
+            "node": "One item per session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One item per session": {
+      "main": [
+        [
+          {
+            "node": "Stale?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stale?": {
+      "main": [
+        [
+          {
+            "node": "Delete session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete session": {
+      "main": [
+        [
+          {
+            "node": "Collect deleted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect deleted": {
+      "main": [
+        [
+          {
+            "node": "Post summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

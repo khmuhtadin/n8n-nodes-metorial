@@ -14,3 +14,7 @@ List operations return the complete API response including pagination informatio
 
 ## About the author
 Khairul Muhtadin, n8n Ambassador ([LinkedIn](https://linkedin.com/in/khmuhtadin)).
+
+## Workflow template
+
+[`examples/template-metorial-stale-session-cleanup.json`](examples/template-metorial-stale-session-cleanup.json): **Clean up stale MCP sessions with Metorial and Slack**. Import it in n8n (Workflows > Import from file). Setup steps are in the yellow sticky note.
