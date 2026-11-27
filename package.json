@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-metorial",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Metorial MCP sessions and providers for n8n and AI agents",
   "license": "MIT",
   "homepage": "https://github.com/khmuhtadin/n8n-nodes-metorial#readme",
